@@ -82,15 +82,48 @@ let getWebHook = (req, res) => {
 }
 
 // Handles messages events
-function handleMessage(sender_psid, received_message) {
+async function handleMessage(sender_psid, received_message) {
     let response;
-
+    let getNameFromFacebook = await chatbotService.getUserName(sender_psid)
     // Checks if the message contains text
     if (received_message.text) {
         // Create the payload for a basic text message, which
-        // will be added to the body of our request to the Send API
+        // will be added to the body of our request to the Send API       
+        let text = received_message.text;
+        if (
+            text.includes(VARIABLE.ASK_TIME1) ||
+            text.includes(VARIABLE.ASK_TIME2) ||
+            text.includes(VARIABLE.ASK_TIME3)
+        ) {
+            let asktime = {
+                "text": `👐 Xin chào ${getNameFromFacebook}! 👐
+                \n🏥 Hiện tại các bác sĩ hoạt động từ thứ 2 - 7 hàng tuần.
+                \n⏲ Thời gian 08:00 - 17:00
+                \n`
+            }
+            callSendAPI(sender_psid, asktime)
+        } else if (text.includes(VARIABLE.ASK_PAYMENT)) {
+            let askpay = {
+                "text": `💳 Dạ, tùy từng bác sĩ sẽ có những phương thức thanh toán khác nhau
+                \nCó 2 phương thức chính: tiền mặt hoặc thẻ tín dụng.`
+            }
+            callSendAPI(sender_psid, askpay)
+        } else if (text.includes(VARIABLE.ASK_BOOK)) {
+            let askbook = {
+                "text": `📅Hướng dẫn đặt lịch📅
+                \n❗❗ HOÀN TOÀN MIỄN PHÍ
+                \n👉Quý khách chọn khởi động lại bot.
+                \n👉Chọn ĐẶT LỊCH KHÁM. Thiết bị sẽ mở ra cửa sổ mới.
+                \n👉Quý khách vui lòng điền thông tin cần thiết.
+                \n👉Sau khi đặt lịch thành công sẽ có tin nhắn check lại thông tin.
+                \n❗Trong trường hợp sai thông tin, quý khách có thể đặt lịch lại.
+                \n❌Vui lòng không spam lên hệ thông vì sẽ ảnh hưởng tới người khác.`
+            }
+            callSendAPI(sender_psid, askbook)
+        }
+
         response = {
-            "text": `You sent the message: "${received_message.text}". Now send me an attachment!`
+            "text": "Daisy Care có thể giúp gì cho bạn?"
         }
     } else if (received_message.attachments) {
         // Get the URL of the message attachment

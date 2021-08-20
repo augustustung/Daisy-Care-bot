@@ -114,12 +114,14 @@ let handleGetStarted = (sender_psid) => {
     return new Promise(async (resolve, reject) => {
         try {
             let username = await getUserName(sender_psid);
-            let resName = { "text": `Chào mừng ${username} đến với Daisy Care!.` };
+            let resName = { "text": `Chào mừng ${username} đến với Daisy Care!` };
             //send text
             callSendAPI(sender_psid, resName)
             //send generate template
             let resCarosel = getStartedTemplate(username)
             callSendAPI(sender_psid, resCarosel);
+            let ask = { "text": `Daisy Care có thể giúp gì cho bạn?` };
+            callSendAPI(sender_psid, ask)
             resolve("done")
         } catch (e) {
             reject(e);
