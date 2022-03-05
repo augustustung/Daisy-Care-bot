@@ -1,3 +1,7 @@
-# Daisy-Care-bot
-- A bot help user book schedule.
-- Using Facebook Message Platform and Nodejs. Build from scratch.
+# run this when deploy to heroku
+package might not be installed
+`heroku config:set NPM_CONFIG_PRODUCTION=false`
+
+
+# check log heroku 
+`heroku logs --tail`

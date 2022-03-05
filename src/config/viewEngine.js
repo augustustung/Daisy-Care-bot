@@ -1,4 +1,4 @@
-import express from 'express'
+const express = require('express')
 
 //config viewengine for express app
 let configViewEngine = (app) => {

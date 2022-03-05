@@ -1,14 +1,12 @@
 require('dotenv').config();
 const request = require('request');
-import VARIABLE from '../../constant/variable';
-import chatbotService from '../services/chatbotService'
-import { GoogleSpreadsheet } from 'google-spreadsheet'
-import moment from 'moment'
-import homeService from '../services/homeService'
+const VARIABLE = require('../../constant/variable');
+const chatbotService = require('../services/chatbotService')
+const { GoogleSpreadsheet } = require('google-spreadsheet')
+const moment = require('moment')
 
 const {
     PAGE_ACCESS_TOKEN,
-    URL_WEB_VIEW_ORDER,
     CLIENT_EMAIL,
     PRIVATE_KEY,
     HOME_PAGE,
@@ -20,45 +18,45 @@ let getHomePage = async (req, res) => {
     return res.render('homePage.ejs')
 }
 
-let postWebHook = (req, res) => {
+let postWebHook = (req, res) => {  
     let body = req.body;
 
     // Checks this is an event from a page subscription
     if (body.object === 'page') {
 
-        // Iterates over each entry - there may be multiple if batched
-        body.entry.forEach(function (entry) {
+    // Iterates over each entry - there may be multiple if batched
+    body.entry.forEach(function (entry) {
 
-            // Gets the body of the webhook event
-            let webhook_event = entry.messaging[0];
-            console.log(webhook_event);
+        // Gets the body of the webhook event
+        let webhook_event = entry.messaging[0];
 
+        // Get the sender PSID
+        let sender_psid = webhook_event.sender.id;
 
-            // Get the sender PSID
-            let sender_psid = webhook_event.sender.id;
-            console.log('Sender PSID: ' + sender_psid);
+        // Check if the event is a message or postback and
+        // pass the event to the appropriate handler function
+        if (webhook_event.message) {
+            handleMessage(sender_psid, webhook_event.message);
+        } else if (webhook_event.postback) {
+            handlePostback(sender_psid, webhook_event.postback);
+        }
+    });
 
-            // Check if the event is a message or postback and
-            // pass the event to the appropriate handler function
-            if (webhook_event.message) {
-                handleMessage(sender_psid, webhook_event.message);
-            } else if (webhook_event.postback) {
-                handlePostback(sender_psid, webhook_event.postback);
-            }
-        });
-
-        // Returns a '200 OK' response to all requests
-        res.status(200).send('EVENT_RECEIVED');
+      // Returns a '200 OK' response to all requests
+      res.status(200).send('EVENT_RECEIVED');
     } else {
-        // Returns a '404 Not Found' if event is not from a page subscription
-        res.sendStatus(404);
+        console.log('errr post webhook');
+      // Returns a '404 Not Found' if event is not from a page subscription
+      res.sendStatus(404);
     }
+  
 }
 
 let getWebHook = (req, res) => {
+
     // Your verify token. Should be a random string.
     let VERIFY_TOKEN = process.env.VERIFY_TOKEN
-
+      
     // Parse the query params
     let mode = req.query['hub.mode'];
     let token = req.query['hub.verify_token'];
@@ -66,18 +64,18 @@ let getWebHook = (req, res) => {
 
     // Checks if a token and mode is in the query string of the request
     if (mode && token) {
-
+        
         // Checks the mode and token sent is correct
-        if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+      if (mode === 'subscribe' && token === VERIFY_TOKEN) {
 
-            // Responds with the challenge token from the request
-            console.log('WEBHOOK_VERIFIED');
-            res.status(200).send(challenge);
+        // Responds with the challenge token from the request
+        console.log('WEBHOOK_VERIFIED');
+        res.status(200).send(challenge);
 
-        } else {
-            // Responds with '403 Forbidden' if verify tokens do not match
-            res.sendStatus(403);
-        }
+      } else {
+        // Responds with '403 Forbidden' if verify tokens do not match
+        res.sendStatus(403);      
+      }
     }
 }
 
@@ -98,7 +96,7 @@ async function handleMessage(sender_psid, received_message) {
             let asktime = {
                 "text": `👐 Xin chào ${getNameFromFacebook}! 👐
                 \n🏥 Hiện tại các bác sĩ hoạt động từ thứ 2 - 7 hàng tuần.
-                \n⏲ Thời gian 08:00 - 17:00
+                \n⏲ Thời gian 08:00 - 17:00.
                 \n`
             }
             callSendAPI(sender_psid, asktime)
@@ -111,7 +109,7 @@ async function handleMessage(sender_psid, received_message) {
         } else if (text.includes(VARIABLE.ASK_BOOK)) {
             let askbook = {
                 "text": `📅Hướng dẫn đặt lịch📅
-                \n❗❗ HOÀN TOÀN MIỄN PHÍ
+                \n❗❗ HOÀN TOÀN MIỄN PHÍ.
                 \n👉Quý khách chọn khởi động lại bot.
                 \n👉Chọn ĐẶT LỊCH KHÁM. Thiết bị sẽ mở ra cửa sổ mới.
                 \n👉Quý khách vui lòng điền thông tin cần thiết.
@@ -196,16 +194,20 @@ function callSendAPI(sender_psid, response) {
         "recipient": {
             "id": sender_psid
         },
-        "message": response
+        "message": {
+            ...response
+        }
     }
+
+    console.log('res', response);
 
     // Send the HTTP request to the Messenger Platform
     request({
-        "uri": "https://graph.facebook.com/v9.0/me/messages",
+        "uri": "https://graph.facebook.com/v13.0/me/messages",
         "qs": { "access_token": process.env.PAGE_ACCESS_TOKEN },
         "method": "POST",
         "json": request_body
-    }, (err, res, body) => {
+    }, (err) => {
         if (!err) {
             console.log('message sent!')
         } else {
@@ -221,12 +223,12 @@ let setupProfile = (req, res) => {
         "get_started": {
             "payload": VARIABLE.GET_STARTED
         },
-        "whitelisted_domains": ["https://daisycare.herokuapp.com/"]
+        "whitelisted_domains": ["https://daisycare-bot.herokuapp.com/"]
     }
 
     // Send the HTTP request to the Messenger Platform
     request({
-        "uri": `https://graph.facebook.com/v11.0/me/messenger_profile?access_token=${PAGE_ACCESS_TOKEN}`,
+        "uri": `https://graph.facebook.com/v13.0/me/messenger_profile?access_token=${PAGE_ACCESS_TOKEN}`,
         "qs": { "access_token": PAGE_ACCESS_TOKEN },
         "method": "POST",
         "json": request_body
@@ -252,7 +254,7 @@ let setupPersistentMenu = (req, res) => {
                     {
                         "type": "web_url",
                         "title": "Trang chủ Daisy Care 🏥",
-                        "url": `${HOME_PAGE}`,
+                        "url": HOME_PAGE,
                         "webview_height_ratio": "full"
                     },
                     {
@@ -272,7 +274,7 @@ let setupPersistentMenu = (req, res) => {
     }
 
     request({
-        "uri": `https://graph.facebook.com/v11.0/me/messenger_profile?access_token=${PAGE_ACCESS_TOKEN}`,
+        "uri": `https://graph.facebook.com/v13.0/me/messenger_profile?access_token=${PAGE_ACCESS_TOKEN}`,
         "qs": { "access_token": PAGE_ACCESS_TOKEN },
         "method": "POST",
         "json": request_body
@@ -289,16 +291,15 @@ let setupPersistentMenu = (req, res) => {
 }
 
 let handleBooking = (req, res) => {
-    // let id = req.query.doctorId
-    // let doctorInfo = await homeService.getDetailDoctor(id)
-    // console.log("asihfaoihgfioasgioaghjsadphgfsdepoh", doctorInfo)
-    return res.render('bookingModal.ejs');
+    let id = req.params.senderId;
+    return res.render('bookingModal.ejs', {
+        senderId: id
+    });
 }
 
 let handleBookingSchedule = async (req, res) => {
     try {
         let getNameFromFacebook = await chatbotService.getUserName(req.body.psid)
-
 
         let customerName = req.body.customerName
         if (req.body.customerName === "") {
@@ -323,12 +324,13 @@ let handleBookingSchedule = async (req, res) => {
             \nĐịa chỉ email: ${req.body.email}
             \nSố điện thoại: ${req.body.phoneNumber}
             \nLý do khám: ${req.body.reason}
-            \nThời gian khám: ${req.body.time}`
+            \nThời gian khám: ${req.body.time}`.toString()
         }
 
         let thanks = {
             "text": `Cảm ơn bạn đã sử dụng dịch vụ của Daisy Care 💖💖.
-            \nBạn vui lòng chú ý tới điện thoại để nhân viên xác nhận và hỗ trợ chọn bác sĩ tốt nhất ♥️♥️.`
+            \nBạn vui lòng chú ý tới điện thoại để nhân viên xác nhận và hỗ trợ chọn bác sĩ tốt nhất.
+            `.toString()
         }
 
 
@@ -375,7 +377,7 @@ let writeOnGoogleSheet = async (data) => {
                 "Số điện thoại": `'${phoneNumber}`,
                 "Thời gian đặt": formatedDate,
                 "Tên khách hàng": customerName,
-                "Lý do": reason,
+                "Lý do khám": reason,
                 "Thời gian khám": time
             });
 

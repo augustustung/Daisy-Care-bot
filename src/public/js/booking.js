@@ -9,7 +9,7 @@
 window.extAsyncInit = function () {
     // the Messenger Extensions JS SDK is done loading 
 
-    MessengerExtensions.getContext('811630736174597',
+    MessengerExtensions.getContext('1165833717489013',
         function success(thread_context) {
             // success
             //set psid to input
@@ -18,7 +18,9 @@ window.extAsyncInit = function () {
         },
         function error(err) {
             // error
-            console.log('Lỗi đặt bàn bot', err);
+            console.log('Lỗi đặt webview', err);
+            $("#psid").val(senderId);
+            handleClickBookingSchedule();
         }
     );
 };
@@ -67,7 +69,6 @@ function validateInputFields() {
 function handleClickBookingSchedule() {
     $("#btnBookingSchedule").on("click", function (e) {
         let check = validateInputFields(); //return true or false
-
         let data = {
             psid: $("#psid").val(),
             customerName: $("#customerName").val(),
@@ -81,9 +82,10 @@ function handleClickBookingSchedule() {
             //close webview
             MessengerExtensions.requestCloseBrowser(function success() {
                 // webview closed
+                console.log('web view closed');
             }, function error(err) {
                 // an error occurred
-                console.log(err);
+                console.log('web view close err', err);
             });
 
             //send data to node.js server 
@@ -92,10 +94,14 @@ function handleClickBookingSchedule() {
                 method: "POST",
                 data: data,
                 success: function (data) {
-                    console.log(data);
+                    if (data && data.message && data.message === 'ok') {
+                        $('div.container').empty();
+                        $('div.container').append("<b style='color: green;'>Đặt thành công</b>.");
+                    }
                 },
                 error: function (error) {
-                    console.log(error);
+                    console.log(error);                        
+                    $('div.container').append("<b style='color: red;'>Có lỗi xảy ra. Vui lòng thử lại</b>.");
                 }
             })
         }

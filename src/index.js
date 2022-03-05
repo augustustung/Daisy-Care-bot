@@ -1,7 +1,7 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import viewEngine from './config/viewEngine';
-import webRoute from './routes/web';
+const express = require('express');
+const bodyParser = require('body-parser');
+const viewEngine = require('./config/viewEngine');
+const webRoute = require('./routes/web');
 
 let app = express();
 

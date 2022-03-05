@@ -1,7 +1,7 @@
-import VARIABLE from '../../constant/variable'
-import IMAGE from '../../constant/image'
+const VARIABLE = require('../../constant/variable')
+const IMAGE = require('../../constant/image')
 require('dotenv').config()
-import request from 'request'
+const request = require('request')
 
 const {
     PAGE_ACCESS_TOKEN,
@@ -14,22 +14,21 @@ const {
     imgaeBanner
 } = IMAGE
 
-const callSendAPI = (sender_psid, response) => {
+const callSendAPI = (sender_psid, message) => {
     // Construct the message body
     let request_body = {
         "recipient": {
             "id": sender_psid
         },
-        "message": response
+        "message": message
     }
-
     sendMarkon(sender_psid)
     sendTypeOn(sender_psid)
 
 
     // Send the HTTP request to the Messenger Platform
     request({
-        "uri": `https://graph.facebook.com/v11.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
+        "uri": `https://graph.facebook.com/v13.0/me/messages`,
         "qs": { "access_token": PAGE_ACCESS_TOKEN },
         "method": "POST",
         "json": request_body
@@ -53,7 +52,7 @@ const sendTypeOn = (sender_psid) => {
 
     // Send the HTTP request to the Messenger Platform
     request({
-        "uri": `https://graph.facebook.com/v9.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
+        "uri": `https://graph.facebook.com/v13.0/me/messages`,
         "qs": { "access_token": PAGE_ACCESS_TOKEN },
         "method": "POST",
         "json": request_body
@@ -77,7 +76,7 @@ const sendMarkon = (sender_psid) => {
 
     // Send the HTTP request to the Messenger Platform
     request({
-        "uri": `https://graph.facebook.com/v9.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
+        "uri": `https://graph.facebook.com/v13.0/me/messages`,
         "qs": { "access_token": PAGE_ACCESS_TOKEN },
         "method": "POST",
         "json": request_body
@@ -118,18 +117,19 @@ let handleGetStarted = (sender_psid) => {
             //send text
             callSendAPI(sender_psid, resName)
             //send generate template
-            let resCarosel = getStartedTemplate(username)
+            let resCarosel = getStartedTemplate(username, sender_psid)
             callSendAPI(sender_psid, resCarosel);
             let ask = { "text": `Daisy Care có thể giúp gì cho bạn?` };
             callSendAPI(sender_psid, ask)
             resolve("done")
         } catch (e) {
+            console.log('start errr', e);
             reject(e);
         }
     })
 }
 
-let getStartedTemplate = (username) => {
+let getStartedTemplate = (username, senderID) => {
     let res = {
         "attachment": {
             "type": "template",
@@ -153,7 +153,7 @@ let getStartedTemplate = (username) => {
                             },
                             {
                                 "type": "web_url",
-                                "url": `${URL_WEB_VIEW_ORDER}`,
+                                "url": `${URL_WEB_VIEW_ORDER}/${senderID}`,
                                 "title": "ĐẶT LỊCH KHÁM 🗓",
                                 "webview_height_ratio": "tall",
                                 "messenger_extensions": "true"
@@ -177,10 +177,10 @@ let getStartedTemplate = (username) => {
                         "buttons": [
                             {
                                 "type": "web_url",
-                                "url": `${URL_WEB_VIEW_ORDER}`,
+                                "url": `${URL_WEB_VIEW_ORDER}/${senderID}`,
                                 "title": "ĐẶT LỊCH KHÁM 🗓",
                                 "webview_height_ratio": "tall",
-                                "messenger_extensions": "true"
+                                "messenger_extensions": true
                             },
                             {
                                 "type": "postback",
@@ -192,6 +192,7 @@ let getStartedTemplate = (username) => {
                 ]
             }
         }
+        
     }
     return res;
 }

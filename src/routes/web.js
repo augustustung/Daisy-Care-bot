@@ -1,5 +1,5 @@
-import express from 'express'
-import homeController from '../controllers/homeController'
+const express = require('express')
+const homeController = require('../controllers/homeController')
 
 let router = express.Router()
 
@@ -12,8 +12,7 @@ let initWebRoute = (app) => {
 
     router.post('/webhook', homeController.postWebHook)
     router.get('/webhook', homeController.getWebHook)
-
-    router.get('/booking', homeController.handleBooking)
+    router.get('/booking/:senderId', homeController.handleBooking)
     router.post('/booking-ajax', homeController.handleBookingSchedule)
 
 
